@@ -140,14 +140,71 @@ async function fetchEvents() {
   }
 }
 
+// Toast Notification System
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerText = message;
+  container.appendChild(toast);
+  
+  // Trigger animation
+  requestAnimationFrame(() => toast.classList.add('show'));
+  
+  // Remove after 5s
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 5000);
+}
+
 // Partition actions
 async function isolate(nodeId) {
+  // Before partitioning, get current leader
+  let wasLeader = false;
+  let currentLeader = null;
+  try {
+    const res = await fetch(`${API}/cluster-status`);
+    const data = await res.json();
+    currentLeader = data.leader?.nodeId;
+    wasLeader = (currentLeader === nodeId);
+  } catch(e) {}
+
   await fetch(`${API}/admin/partition`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nodeId, isolated: true, blockedPeers: [] })
   });
-  fetchStatus();
+  
+  if (wasLeader) {
+    showToast(`Isolating ${nodeId}... waiting for election!`, 'danger');
+    fetchStatus();
+    
+    // Poll for new leader
+    let attempts = 0;
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await fetch(`${API}/cluster-status`);
+        const data = await res.json();
+        const pollerLeader = data.leader?.nodeId;
+        
+        if (pollerLeader && pollerLeader !== nodeId) {
+          clearInterval(pollInterval);
+          showToast(`Isolated ${nodeId}. New leader is ${pollerLeader}!`, 'leader');
+          fetchStatus();
+        } else if (attempts > 10) { // wait ~5s max
+          clearInterval(pollInterval);
+          showToast(`Isolated ${nodeId}. No new leader emerged yet.`, 'danger');
+        }
+      } catch(e) {}
+    }, 500);
+
+  } else {
+    showToast(`Isolated ${nodeId}. Leader remains ${currentLeader || 'none'}.`, 'danger');
+    fetchStatus();
+  }
 }
 
 async function splitBrain() {
@@ -164,11 +221,13 @@ async function splitBrain() {
       body: JSON.stringify({ nodeId: item.nodeId, isolated: false, blockedPeers: item.blockedPeers })
     });
   }
+  showToast('Network partitioned: Split Brain initiated (2 vs 2).', 'danger');
   fetchStatus();
 }
 
 async function healAll() {
   await fetch(`${API}/admin/partition/heal-all`, { method: 'POST' });
+  showToast('Network healed. Awaiting cluster reconciliation...', 'info');
   fetchStatus();
 }
 

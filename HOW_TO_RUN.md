@@ -19,9 +19,9 @@ The entire application runs inside Docker. Docker Compose handles starting the r
    ```
 3. Start the cluster by running:
    ```bash
-   docker compose up --build
+   docker-compose up --build
    ```
-   *(Note: You can also run it in detached mode in the background by appending `-d`, e.g., `docker compose up --build -d`)*
+   *(Note: You can also run it in detached mode in the background by appending `-d`, e.g., `docker-compose up --build -d`)*
 
 Once you see logs indicating that the replicas are receiving heartbeats, participating in leader elections, and the gateway is ready, the system is fully operational.
 
@@ -81,9 +81,9 @@ This simulates 15 drawing strokes with 100ms apart and verifies that the backend
 
 ## 5. Stopping the Application
 To stop all the servers and clean up the containers:
-1. Go back to the terminal where you ran `docker compose`.
+1. Go back to the terminal where you ran `docker-compose`.
 2. Press `Ctrl + C` to gracefully stop the containers.
 3. To fully remove the containers, type:
    ```bash
-   docker compose down
+   docker-compose down
    ```

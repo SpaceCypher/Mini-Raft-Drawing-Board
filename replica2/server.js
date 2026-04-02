@@ -228,6 +228,8 @@ async function sendHeartbeats() {
     return;
   }
 
+  let acks = 1;
+
   await Promise.all(
     PEERS.map(async (peerUrl) => {
       if (isOutboundBlocked(peerUrl)) {
@@ -253,6 +255,8 @@ async function sendHeartbeats() {
           return;
         }
 
+        acks++;
+
         const followerCommitIndex = Number(res.data.commitIndex ?? -1);
         if (Number.isFinite(followerCommitIndex) && followerCommitIndex < commitIndex) {
           await pushSyncToFollower(peerUrl, followerCommitIndex + 1);
@@ -262,6 +266,11 @@ async function sendHeartbeats() {
       }
     })
   );
+
+  if (role === 'leader' && acks < majority()) {
+    logEvent(`lost quorum during heartbeats (only ${acks} acks), stepping down`);
+    becomeFollower(currentTerm, null);
+  }
 }
 
 async function pushSyncToFollower(peerUrl, fromIndex) {
