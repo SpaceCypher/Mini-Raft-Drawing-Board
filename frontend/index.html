@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniRAFT Board</title>
+    <!-- Modern Tech Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=2" />
+  </head>
+  <body>
+    <!-- Full-screen immersive canvas -->
+    <canvas id="board"></canvas>
+    
+    <!-- Floating Top Left Panel (Title + Stats) -->
+    <div class="hud panel panel-top-left">
+      <div class="brand">
+        <h1>MiniRAFT Board</h1>
+        <p>Real-time distributed consensus whiteboard</p>
+      </div>
+      <div class="mini-stats" aria-live="polite">
+        <span id="strokeCount" class="stat">Strokes: 0</span>
+        <span id="activeUsers" class="stat">Users: 0</span>
+      </div>
+    </div>
+
+    <!-- Floating Top Right Panel (Connecting Status) -->
+    <div class="hud panel panel-top-right">
+      <section class="status-strip">
+        <span id="connectionStatus" class="chip">Connecting...</span>
+        <span id="leaderStatus" class="chip ghost">Leader: unknown</span>
+        <span id="syncStatus" class="chip ghost">Sync: idle</span>
+        <span id="toolStatus" class="chip ghost">Tool: brush</span>
+      </section>
+      <div class="actions-row">
+        <button id="undoBtn" type="button" class="btn-secondary" title="Undo">⟲ Undo</button>
+        <button id="redoBtn" type="button" class="btn-secondary" title="Redo">⟳ Redo</button>
+        <button id="saveBtn" type="button" class="btn-secondary">Save Board</button>
+        <button id="clearLocalBtn" type="button" class="btn-danger">Clear</button>
+        <a id="dashboardLink" class="btn-outline" href="#" target="_blank" rel="noreferrer">Dashboard</a>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Dock (Tools & Looks) -->
+    <div class="hud panel dock-bottom">
+      <div class="tools-row">
+        <label class="color-control">
+          <input id="colorPicker" type="color" value="#10b981" />
+        </label>
+        <div class="swatches" aria-label="Quick colors">
+          <button class="swatch" type="button" data-color="#10b981" style="--sw:#10b981"></button>
+          <button class="swatch" type="button" data-color="#f43f5e" style="--sw:#f43f5e"></button>
+          <button class="swatch" type="button" data-color="#3b82f6" style="--sw:#3b82f6"></button>
+          <button class="swatch" type="button" data-color="#fbbf24" style="--sw:#fbbf24"></button>
+          <button class="swatch" type="button" data-color="#ffffff" style="--sw:#ffffff"></button>
+        </div>
+        <div class="divider"></div>
+        <div class="tool-group">
+          <button id="eraserBtn" class="tool-btn" type="button" title="Eraser">Erase</button>
+          <button id="lineBtn" class="tool-btn" type="button" title="Line">Line</button>
+          <button id="rectBtn" class="tool-btn" type="button" title="Rectangle">Rectangle</button>
+          <button id="circleBtn" class="tool-btn" type="button" title="Circle">Circle</button>
+          <button id="gridBtn" class="tool-btn" type="button" title="Snap to Grid">Grid</button>
+        </div>
+        <div class="divider"></div>
+        <label class="width-control">
+          <span>Pen Width</span>
+          <input id="widthPicker" type="range" min="1" max="12" value="3" />
+        </label>
+      </div>
+      
+      <div class="look-controls" aria-label="Board look controls">
+        <div class="look-group">
+          <span>Canvas Color</span>
+          <input type="hidden" id="backgroundPreset" value="slate">
+          <div class="swatches" id="bgSwatchesContainer" style="margin-left: 4px;">
+            <button class="bg-swatch swatch" data-preset="slate" style="--sw: #0f172a" title="Slate"></button>
+            <button class="bg-swatch swatch" data-preset="paper" style="--sw: #f8fbfd" title="Paper"></button>
+            <button class="bg-swatch swatch" data-preset="mint" style="--sw: #dceee5" title="Mint"></button>
+            <button class="bg-swatch swatch" data-preset="sunset" style="--sw: #1f101a" title="Sunset"></button>
+            <button class="bg-swatch swatch" data-preset="ocean" style="--sw: #0f1e29" title="Ocean"></button>
+          </div>
+        </div>
+        <label>
+          Tint
+          <input id="backgroundTint" type="color" value="#0f172a" />
+        </label>
+        <input type="hidden" id="textureStrength" value="18">
+        <label class="btn-tiny upload-bg">
+          Upload
+          <input id="backgroundUpload" type="file" accept="image/*" />
+        </label>
+      </div>
+    </div>
+
+    <script src="app.js?v=2"></script>
+  </body>
+</html>

@@ -1,0 +1,154 @@
+services:
+  replica1:
+    build: ./replica1
+    container_name: replica1
+    environment:
+      NODE_ID: replica1
+      PORT: 5001
+      PEERS: http://replica2:5002,http://replica3:5003,http://replica4:5004
+      GATEWAY_URL: http://gateway:4000
+      HEARTBEAT_INTERVAL_MS: 150
+      ELECTION_TIMEOUT_MIN_MS: 500
+      ELECTION_TIMEOUT_MAX_MS: 800
+    ports:
+      - '5001:5001'
+    volumes:
+      - ./replica1:/app
+      - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5001/status']
+      interval: 4s
+      timeout: 2s
+      retries: 8
+    networks:
+      - miniraft-net
+
+  replica2:
+    build: ./replica2
+    container_name: replica2
+    environment:
+      NODE_ID: replica2
+      PORT: 5002
+      PEERS: http://replica1:5001,http://replica3:5003,http://replica4:5004
+      GATEWAY_URL: http://gateway:4000
+      HEARTBEAT_INTERVAL_MS: 150
+      ELECTION_TIMEOUT_MIN_MS: 500
+      ELECTION_TIMEOUT_MAX_MS: 800
+    ports:
+      - '5002:5002'
+    volumes:
+      - ./replica2:/app
+      - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5002/status']
+      interval: 4s
+      timeout: 2s
+      retries: 8
+    networks:
+      - miniraft-net
+
+  replica3:
+    build: ./replica3
+    container_name: replica3
+    environment:
+      NODE_ID: replica3
+      PORT: 5003
+      PEERS: http://replica1:5001,http://replica2:5002,http://replica4:5004
+      GATEWAY_URL: http://gateway:4000
+      HEARTBEAT_INTERVAL_MS: 150
+      ELECTION_TIMEOUT_MIN_MS: 500
+      ELECTION_TIMEOUT_MAX_MS: 800
+    ports:
+      - '5003:5003'
+    volumes:
+      - ./replica3:/app
+      - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5003/status']
+      interval: 4s
+      timeout: 2s
+      retries: 8
+    networks:
+      - miniraft-net
+
+  replica4:
+    build: ./replica4
+    container_name: replica4
+    environment:
+      NODE_ID: replica4
+      PORT: 5004
+      PEERS: http://replica1:5001,http://replica2:5002,http://replica3:5003
+      GATEWAY_URL: http://gateway:4000
+      HEARTBEAT_INTERVAL_MS: 150
+      ELECTION_TIMEOUT_MIN_MS: 500
+      ELECTION_TIMEOUT_MAX_MS: 800
+    ports:
+      - '5004:5004'
+    volumes:
+      - ./replica4:/app
+      - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5004/status']
+      interval: 4s
+      timeout: 2s
+      retries: 8
+    networks:
+      - miniraft-net
+
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    depends_on:
+      replica1:
+        condition: service_healthy
+      replica2:
+        condition: service_healthy
+      replica3:
+        condition: service_healthy
+      replica4:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      REPLICA_URLS: http://replica1:5001,http://replica2:5002,http://replica3:5003,http://replica4:5004
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./gateway:/app
+      - /app/node_modules
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:4000/health']
+      interval: 4s
+      timeout: 2s
+      retries: 8
+    networks:
+      - miniraft-net
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - '8080:80'
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    networks:
+      - miniraft-net
+
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard
+    depends_on:
+      gateway:
+        condition: service_healthy
+    ports:
+      - '8090:80'
+    volumes:
+      - ./dashboard:/usr/share/nginx/html
+    networks:
+      - miniraft-net
+
+networks:
+  miniraft-net:
+    driver: bridge

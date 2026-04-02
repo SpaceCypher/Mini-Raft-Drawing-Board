@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniRAFT Command Center</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=20260401neo" />
+  </head>
+  <body>
+    <!-- Background animations -->
+    <div class="bg-glow bg-glow-left"></div>
+    <div class="bg-glow bg-glow-right"></div>
+    <div class="bg-texture"></div>
+
+    <main class="shell">
+      <header class="dashboard-header glass-panel">
+        <div>
+          <h1>MiniRAFT Command Center</h1>
+          <p>Real-time cluster consensus, log replication, and partition network simulation.</p>
+        </div>
+        <div class="pulse-indicator">
+          <div class="pulse-dot"></div>
+          <span>Cluster Active</span>
+        </div>
+      </header>
+
+      <section class="nodes-wrapper" aria-label="Cluster Nodes">
+        <div class="nodes-row" id="nodesRow">
+          <!-- Node cards rendered by JS -->
+        </div>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="event-feed glass-panel panel-dark">
+          <div class="panel-header">
+            <h2>Live Event Feed</h2>
+            <div class="terminal-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="feed-scroll" id="eventFeed">
+            <p class="feed-empty">Waiting for cluster events, leader elections, and log commits...</p>
+          </div>
+        </section>
+
+        <section class="partition-controls glass-panel">
+          <div class="panel-header">
+            <h2>Network Partition Controls</h2>
+            <span class="badge-tag">Simulation</span>
+          </div>
+          <p class="control-desc">Sever network connections to force re-elections and test split-brain conflict resolution.</p>
+          
+          <div class="btn-grid">
+            <button class="btn btn-danger" data-action="isolate" data-node="replica1">Isolate Node 1</button>
+            <button class="btn btn-danger" data-action="isolate" data-node="replica2">Isolate Node 2</button>
+            <button class="btn btn-danger" data-action="isolate" data-node="replica3">Isolate Node 3</button>
+            <button class="btn btn-danger" data-action="isolate" data-node="replica4">Isolate Node 4</button>
+            <button class="btn btn-warning" data-action="split">Split Brain (2 vs 2)</button>
+            <button class="btn btn-success" data-action="heal">Heal All Nodes</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="app.js?v=20260401neo"></script>
+  </body>
+</html>

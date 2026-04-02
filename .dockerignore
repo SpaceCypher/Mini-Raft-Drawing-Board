@@ -1,0 +1,17 @@
+# macOS resource forks and metadata
+**/._*
+**/.DS_Store
+
+# Python virtual environment
+.venv/
+
+# Documentation and non-runtime files
+docs/
+*.pdf
+logs/
+scripts/
+deploy/
+
+# Git
+.git/
+.gitignore
