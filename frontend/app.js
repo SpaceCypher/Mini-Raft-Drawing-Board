@@ -26,6 +26,9 @@ const dashboardLink = document.getElementById('dashboardLink');
 const swatchButtons = Array.from(document.querySelectorAll('.swatch[data-color]'));
 const API_BASE = new URLSearchParams(window.location.search).get('api') || `${window.location.protocol}//${window.location.host}/api`;
 const LOOK_STORAGE_KEY = 'miniraft-board-look-v1';
+const ERASER_WIDTH_MULTIPLIER = 2;
+const ERASER_MIN_WIDTH = 10;
+const ERASER_CURSOR_PADDING = 8;
 
 const seenKeys = new Set();
 const committedEntries = [];
@@ -48,6 +51,9 @@ let shapeMode = null;
 let shapeStartPoint = null;
 let shapeCurrentPoint = null;
 let uploadedBackgroundDataUrl = null;
+let boardPointerInside = false;
+let latestPointerPoint = null;
+let eraserCursorEl = null;
 
 const boardBackgroundPresets = {
   paper: {
@@ -356,13 +362,75 @@ function activeStrokeColor() {
   return eraserEnabled ? '#ffffff' : colorPicker.value;
 }
 
+function effectiveStrokeWidth(rawWidth, isEraserStroke = false) {
+  const base = Number(rawWidth || 3);
+  if (!isEraserStroke) {
+    return base;
+  }
+  return Math.max(ERASER_MIN_WIDTH, Math.round(base * ERASER_WIDTH_MULTIPLIER));
+}
+
+function ensureEraserCursor() {
+  if (eraserCursorEl) {
+    return;
+  }
+  eraserCursorEl = document.createElement('div');
+  eraserCursorEl.className = 'eraser-cursor';
+  document.body.appendChild(eraserCursorEl);
+}
+
+function setEraserCursorVisible(isVisible) {
+  if (!eraserCursorEl) {
+    return;
+  }
+  eraserCursorEl.style.opacity = isVisible ? '1' : '0';
+}
+
+function updateEraserCursorSize() {
+  if (!eraserCursorEl) {
+    return;
+  }
+  const diameter = effectiveStrokeWidth(Number(widthPicker.value || 3), true) + ERASER_CURSOR_PADDING;
+  eraserCursorEl.style.width = `${diameter}px`;
+  eraserCursorEl.style.height = `${diameter}px`;
+}
+
+function moveEraserCursor(point) {
+  latestPointerPoint = point || null;
+  if (!eraserCursorEl) {
+    return;
+  }
+  if (!eraserEnabled || !boardPointerInside || !point) {
+    setEraserCursorVisible(false);
+    return;
+  }
+
+  const rect = board.getBoundingClientRect();
+  eraserCursorEl.style.left = `${Math.round(rect.left + point.x)}px`;
+  eraserCursorEl.style.top = `${Math.round(rect.top + point.y)}px`;
+  setEraserCursorVisible(true);
+}
+
+function refreshEraserCursor() {
+  updateEraserCursorSize();
+  moveEraserCursor(latestPointerPoint);
+}
+
+function setBoardPointerInside(isInside) {
+  boardPointerInside = Boolean(isInside);
+  if (!boardPointerInside) {
+    latestPointerPoint = null;
+  }
+  refreshEraserCursor();
+}
+
 function updateToolChip() {
   if (!toolStatus) {
     return;
   }
 
   const mode = shapeMode || (eraserEnabled ? 'eraser' : 'brush');
-  const width = Number(widthPicker.value || 3);
+  const width = effectiveStrokeWidth(Number(widthPicker.value || 3), eraserEnabled);
   const color = eraserEnabled ? '#ffffff' : colorPicker.value;
   toolStatus.textContent = `Tool: ${mode} ${color} / ${width}px${gridEnabled ? ' / grid' : ''}`;
 }
@@ -480,6 +548,7 @@ function setEraserMode(enabled) {
   if (eraserEnabled) {
     shapeMode = null;
   }
+  board.style.cursor = eraserEnabled ? 'none' : '';
   if (eraserBtn) {
     eraserBtn.classList.toggle('active', eraserEnabled);
   }
@@ -488,6 +557,7 @@ function setEraserMode(enabled) {
       btn.classList.remove('active-shape');
     }
   });
+  refreshEraserCursor();
   updateToolChip();
 }
 
@@ -894,7 +964,7 @@ function moveDrawing(point) {
     from: previousPoint,
     to: point,
     color: activeStrokeColor(),
-    width: Number(widthPicker.value),
+    width: effectiveStrokeWidth(Number(widthPicker.value), eraserEnabled),
     isEraser: eraserEnabled
   };
 
@@ -927,19 +997,40 @@ function endDrawing() {
 
 function installInputHandlers() {
   if (window.PointerEvent) {
+    board.addEventListener('pointerenter', (evt) => {
+      setBoardPointerInside(true);
+      moveEraserCursor(boardPoint(evt));
+    });
+
+    board.addEventListener('pointerleave', () => {
+      setBoardPointerInside(false);
+    });
+
     board.addEventListener('pointerdown', (evt) => {
-      beginDrawing(boardPoint(evt));
+      const point = boardPoint(evt);
+      setBoardPointerInside(true);
+      moveEraserCursor(point);
+      beginDrawing(point);
       if (board.setPointerCapture) {
         board.setPointerCapture(evt.pointerId);
       }
     });
 
     board.addEventListener('pointermove', (evt) => {
-      moveDrawing(boardPoint(evt));
+      const point = boardPoint(evt);
+      moveEraserCursor(point);
+      moveDrawing(point);
     });
 
-    board.addEventListener('pointerup', endDrawing);
-    board.addEventListener('pointercancel', endDrawing);
+    board.addEventListener('pointerup', () => {
+      endDrawing();
+      refreshEraserCursor();
+    });
+
+    board.addEventListener('pointercancel', () => {
+      endDrawing();
+      setBoardPointerInside(false);
+    });
     return;
   }
 
@@ -955,6 +1046,7 @@ function installInputHandlers() {
     if (!evt.touches || evt.touches.length === 0) {
       return;
     }
+    setBoardPointerInside(false);
     evt.preventDefault();
     beginDrawing(touchPoint(evt.touches[0]));
   }, { passive: false });
@@ -963,6 +1055,7 @@ function installInputHandlers() {
     if (!evt.touches || evt.touches.length === 0) {
       return;
     }
+    setBoardPointerInside(false);
     evt.preventDefault();
     moveDrawing(touchPoint(evt.touches[0]));
   }, { passive: false });
@@ -970,10 +1063,33 @@ function installInputHandlers() {
   board.addEventListener('touchend', endDrawing, { passive: true });
   board.addEventListener('touchcancel', endDrawing, { passive: true });
 
-  board.addEventListener('mousedown', (evt) => beginDrawing(boardPoint(evt)));
-  board.addEventListener('mousemove', (evt) => moveDrawing(boardPoint(evt)));
-  board.addEventListener('mouseup', endDrawing);
-  board.addEventListener('mouseleave', endDrawing);
+  board.addEventListener('mouseenter', (evt) => {
+    setBoardPointerInside(true);
+    moveEraserCursor(boardPoint(evt));
+  });
+
+  board.addEventListener('mousedown', (evt) => {
+    const point = boardPoint(evt);
+    setBoardPointerInside(true);
+    moveEraserCursor(point);
+    beginDrawing(point);
+  });
+
+  board.addEventListener('mousemove', (evt) => {
+    const point = boardPoint(evt);
+    moveEraserCursor(point);
+    moveDrawing(point);
+  });
+
+  board.addEventListener('mouseup', () => {
+    endDrawing();
+    refreshEraserCursor();
+  });
+
+  board.addEventListener('mouseleave', () => {
+    endDrawing();
+    setBoardPointerInside(false);
+  });
 }
 
 clearLocalBtn.addEventListener('click', () => {
@@ -1114,6 +1230,7 @@ if (colorPicker) {
 if (widthPicker) {
   widthPicker.addEventListener('input', () => {
     updateToolChip();
+    refreshEraserCursor();
   });
 }
 
@@ -1199,6 +1316,7 @@ window.addEventListener('resize', () => {
   fitCanvas();
   renderCommittedState();
   updateSyncChip();
+  refreshEraserCursor();
 });
 
 document.addEventListener('visibilitychange', () => {
@@ -1269,6 +1387,8 @@ function makePanelsDraggable() {
 
 fitCanvas();
 makePanelsDraggable();
+ensureEraserCursor();
+refreshEraserCursor();
 
 function updateBgPreset(val) {
   if (backgroundPreset) backgroundPreset.value = val;
