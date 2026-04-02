@@ -46,7 +46,7 @@ This project is designed to survive crashes without dropping connections! You ca
 
 1. Open the drawing board and start drawing.
 2. Open a new terminal tab.
-3. Find out which replica is the leader (you can see this in the dashboard at localhost:8090, or by running `./scripts/monitor_realtime.sh`).
+3. Find out which replica is the leader (you can see this in the dashboard at localhost:8090, or by running `./scripts/monitor.sh`).
 4. Stop the leader container using Docker to simulate a server crash:
    ```bash
    docker stop replica1 
@@ -62,7 +62,7 @@ The project comes with a set of bash scripts to test and monitor your cluster:
 ### Monitoring the Cluster Status
 To see a real-time terminal output of your cluster's health, use the `monitor_realtime.sh` script:
 ```bash
-./scripts/monitor_realtime.sh
+./scripts/monitor.sh
 ```
 This will continuously output:
 - The current Gateway Leader
@@ -72,8 +72,8 @@ This will continuously output:
 ### Synthetic Load Test
 Need to ensure traffic works without manually clicking the canvas? The `synthetic_commit_test.sh` script will create fake traffic to simulate a user drawing:
 ```bash
-# Usage: ./scripts/synthetic_commit_test.sh [strokes_count] [delay_ms]
-./scripts/synthetic_commit_test.sh 15 100
+# Usage: ./scripts/simulate_load.sh [strokes_count] [delay_ms]
+./scripts/simulate_load.sh 15 100
 ```
 This simulates 15 drawing strokes with 100ms apart and verifies that the backend commit pipeline advances.
 
