@@ -5,8 +5,8 @@ services:
     environment:
       NODE_ID: replica1
       PORT: 5001
-      PEERS: http://replica2:5002,http://replica3:5003,http://replica4:5004
-      GATEWAY_URL: http://gateway:4000
+      PEERS: ${PEERS:-http://replica2:5002,http://replica3:5003,http://replica4:5004}
+      GATEWAY_URL: ${GATEWAY_URL:-http://gateway:4000}
       HEARTBEAT_INTERVAL_MS: 150
       ELECTION_TIMEOUT_MIN_MS: 500
       ELECTION_TIMEOUT_MAX_MS: 800
@@ -29,8 +29,8 @@ services:
     environment:
       NODE_ID: replica2
       PORT: 5002
-      PEERS: http://replica1:5001,http://replica3:5003,http://replica4:5004
-      GATEWAY_URL: http://gateway:4000
+      PEERS: ${PEERS:-http://replica1:5001,http://replica3:5003,http://replica4:5004}
+      GATEWAY_URL: ${GATEWAY_URL:-http://gateway:4000}
       HEARTBEAT_INTERVAL_MS: 150
       ELECTION_TIMEOUT_MIN_MS: 500
       ELECTION_TIMEOUT_MAX_MS: 800
@@ -53,8 +53,8 @@ services:
     environment:
       NODE_ID: replica3
       PORT: 5003
-      PEERS: http://replica1:5001,http://replica2:5002,http://replica4:5004
-      GATEWAY_URL: http://gateway:4000
+      PEERS: ${PEERS:-http://replica1:5001,http://replica2:5002,http://replica4:5004}
+      GATEWAY_URL: ${GATEWAY_URL:-http://gateway:4000}
       HEARTBEAT_INTERVAL_MS: 150
       ELECTION_TIMEOUT_MIN_MS: 500
       ELECTION_TIMEOUT_MAX_MS: 800
@@ -77,8 +77,8 @@ services:
     environment:
       NODE_ID: replica4
       PORT: 5004
-      PEERS: http://replica1:5001,http://replica2:5002,http://replica3:5003
-      GATEWAY_URL: http://gateway:4000
+      PEERS: ${PEERS:-http://replica1:5001,http://replica2:5002,http://replica3:5003}
+      GATEWAY_URL: ${GATEWAY_URL:-http://gateway:4000}
       HEARTBEAT_INTERVAL_MS: 150
       ELECTION_TIMEOUT_MIN_MS: 500
       ELECTION_TIMEOUT_MAX_MS: 800
@@ -109,7 +109,7 @@ services:
         condition: service_healthy
     environment:
       PORT: 4000
-      REPLICA_URLS: http://replica1:5001,http://replica2:5002,http://replica3:5003,http://replica4:5004
+      REPLICA_URLS: ${REPLICA_URLS:-http://replica1:5001,http://replica2:5002,http://replica3:5003,http://replica4:5004}
     ports:
       - '4000:4000'
     volumes:
