@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));

@@ -2,6 +2,7 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
 const WebSocket = require('ws');
 
 const app = express();
